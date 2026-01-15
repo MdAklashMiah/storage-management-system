@@ -1,5 +1,6 @@
 const signupModel = require("../models/signup.model");
-const bcrypt = require('bcryptjs')
+const bcrypt = require("bcryptjs");
+const sendOTP = require("../utils/sendOTP");
 
 const signupController = async (req, res) => {
   try {
@@ -21,15 +22,17 @@ const signupController = async (req, res) => {
       });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10)
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     let user = await signupModel({
       name,
       email,
-      password: hashedPassword
+      password: hashedPassword,
     });
 
     await user.save();
+
+    sendOTP();
 
     return res.status(201).json({
       success: true,
@@ -45,6 +48,38 @@ const signupController = async (req, res) => {
   }
 };
 
+const loginController = async (req, res) => {
+  try {
+    let { email, password } = req.body;
+
+    let user = await signupModel.findOne({ email });
+
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Invalid Credintial" });
+    }
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if (!isMatch) {
+      return res
+        .status(401)
+        .json({ success: false, message: "Invalid Credential" });
+    }
+
+    return res.status(200).json({success: true, message: "Login Successfull", data: user})
+  } catch (error) {
+    return res
+      .status(500)
+      .json({
+        success: false,
+        message: "Internal Server Error",
+        error: error.message,
+      });
+  }
+};
+
 module.exports = {
   signupController,
+  loginController,
 };
