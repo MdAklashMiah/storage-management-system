@@ -4,6 +4,6 @@ const api = require("./api")
 
 console.log("routes is working")
 
-routes.use("api/v1",api)
+routes.use("/api/v1",api)
 
 module.exports = routes
